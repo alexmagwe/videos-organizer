@@ -2,3 +2,4 @@
 organizer
 settings.json
 __pycache__
+*.pkl
