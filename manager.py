@@ -36,7 +36,7 @@ class Manager:
             os.mkdir(path)
             return True
         except Exception as e:
-            print(sys.exc_info()[0])
+            print(f'ERROR CREATING FOLDER {path} ',sys.exc_info()[0])
             return False
     
 
@@ -100,6 +100,7 @@ class Manager:
         bestmatch=process.extractOne(eps.name,self.seriesfolders) 
         foldername=bestmatch[0]
         percentagematch=bestmatch[1]
+        print(f"{eps.name} matches {foldername} by {percentagematch}")
         if percentagematch>=90:
             path=os.path.join(self.seriespath,foldername,eps.season)
             if os.path.exists(path):
@@ -112,12 +113,13 @@ class Manager:
                     return False
                 
         else:
-            path=os.path.join(self.seriespath,foldername)
+            path=os.path.join(self.seriespath,eps.name)
             created=Manager.createNewFolder(path)
+            print('created ',created)
             if created:
                 seasonpath=(os.path.join(path,eps.season))
                 result=Manager.createNewFolder(seasonpath)
-                self.seriesfolders.apend(path)
+                self.seriesfolders.append(path)
                 if result:
                     return seasonpath
         return False
@@ -142,37 +144,35 @@ class Manager:
         print(len(self.series),' episodes found')
         print(len(self.movies),' movies found')
         
-        if len(self.series)>0:
+        if len(self.movies)>0:
             for file in self.movies:
                 self.jobs.append(threading.Thread(target=self.worker,args=[file,]))
-        if len(self.movies)>0:    
+        if len(self.series)>0:    
             for eps in self.series:
-                self.jobs.append(threading.Thread(target=self.worker,args=[eps,]))
-
+                self.jobs.append(threading.Thread(target=self.worker,args=[eps,])) 
         
     def worker(self,job):
-            try:
-                print(f'moving {job.name} to {job.destination}')
-                shutil.move(job.path,job.destination)
-                self.movedfiles+=1
-                print(f'succesfully moved {job.name}')
-            except PermissionError: 
-                self.failed.append((job,sys.exc_info()[0]))        
-            except:
-                self.failed.append((job,sys.exc_info()[0]))        
+        try:
+            print(f'moving {job.name} to {job.destination}')
+            shutil.move(job.path,job.destination)
+            self.movedfiles+=1
+            print(f'succesfully moved {job.name}')
+        except PermissionError: 
+            self.failed.append((job,sys.exc_info()[0]))        
+        except:
+            self.failed.append((job,sys.exc_info()[0]))        
+    
     def startTasks(self):
         total=len(self.jobs)
         if total>0:
-            while self.jobs:
-                job=self.jobs.popleft()
+            for job in self.jobs:
                 job.start()
-            for t in self.jobs:
-                t.join()
-            print(f'{self.movedfiles}/{total} moved succesfully')
-            if total!=self.movedfiles:
-                    print(f"failed:\n{self.failed}")
+            for job in self.jobs:
+                job.join()
+            print(f'{self.movedfiles}/{total} files moved succesfully')
+        if total!=self.movedfiles:
+            print(f"failed:\n{self.failed}")
             return
-        print('no files to move')
                 
 
     
