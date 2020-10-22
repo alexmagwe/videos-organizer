@@ -1,5 +1,6 @@
 from video import Video,Series,Movie
 import os,sys,pickle,shutil,sys,re
+from collections import deque
 from gui import Gui
 from fuzzywuzzy import process
 import threading
@@ -9,17 +10,24 @@ class Manager:
     def __init__(self,filetype='video'):
         self.filetypes=self.types[filetype]
         self.files=[]
+        self.jobs=deque()
+        self.movedfiles=0
+        self.failed=[]
+    
+    def run(self):
         self.setup()
         self.getSeriesFolders()
         self.getVideos()
         self.sortVideos()
         self.get_destinations()
         self.createTasks()
-    
-    def stageMovies():
+        self.startTasks()
+        
+    def stageMovies(self):
         pass
         
-    def stageSeries():
+        
+    def stageSeries(self):
         pass
         
     @staticmethod
@@ -79,12 +87,10 @@ class Manager:
                 name,ext=os.path.splitext(file)
                 if ext in self.filetypes:
                     self.files.append(Video(os.path.join(root,file)))
-                    print(name)
         return self.files
         
     def sortVideos(self):
         movies=list(filter(lambda video:video.is_a_movie,self.files))
-        print(movies)
         self.movies=list(map(lambda movie:Movie(movie.path),movies))
         series=list(filter(lambda video:video.is_a_series,self.files))
         self.series=list(map(lambda eps:Series(eps.path),series))
@@ -94,7 +100,6 @@ class Manager:
         bestmatch=process.extractOne(eps.name,self.seriesfolders) 
         foldername=bestmatch[0]
         percentagematch=bestmatch[1]
-        print (eps.name,' matches the folder ',foldername, 'by ',percentagematch,"%\n",)
         if percentagematch>=90:
             path=os.path.join(self.seriespath,foldername,eps.season)
             if os.path.exists(path):
@@ -116,7 +121,6 @@ class Manager:
                 if result:
                     return seasonpath
         return False
-
     def get_destinations(self):
         for movie in self.movies:
             movie.destination=self.moviespath
@@ -138,21 +142,39 @@ class Manager:
         print(len(self.series),' episodes found')
         print(len(self.movies),' movies found')
         
-        for file in self.movies:
-            print(file.name,' : ',file.destination)
-        for eps in self.series:
-            print(eps.name,' : ',eps.destination)
-        
+        if len(self.series)>0:
+            for file in self.movies:
+                self.jobs.append(threading.Thread(target=self.worker,args=[file,]))
+        if len(self.movies)>0:    
+            for eps in self.series:
+                self.jobs.append(threading.Thread(target=self.worker,args=[eps,]))
 
+        
+    def worker(self,job):
+            try:
+                print(f'moving {job.name} to {job.destination}')
+                shutil.move(job.path,job.destination)
+                self.movedfiles+=1
+                print(f'succesfully moved {job.name}')
+            except PermissionError: 
+                self.failed.append((job,sys.exc_info()[0]))        
+            except:
+                self.failed.append((job,sys.exc_info()[0]))        
     def startTasks(self):
-        pass
-        
-if __name__=='__main__':
-    m=Manager()
-    
-        
-        
-    
+        total=len(self.jobs)
+        if total>0:
+            while self.jobs:
+                job=self.jobs.popleft()
+                job.start()
+            for t in self.jobs:
+                t.join()
+            print(f'{self.movedfiles}/{total} moved succesfully')
+            if total!=self.movedfiles:
+                    print(f"failed:\n{self.failed}")
+            return
+        print('no files to move')
+                
+
     
     
     
