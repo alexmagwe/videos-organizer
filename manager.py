@@ -2,7 +2,11 @@ from video import Video,Series,Movie
 import os,sys,pickle,shutil,sys,re
 from collections import deque
 from gui import Gui
-from fuzzywuzzy import process
+try:
+    from fuzzywuzzy import process
+except ImportError:
+    print('fuzzywuzzy required install it with pip install fuzzywuzzy')
+    sys.exit()
 import threading
 class Manager:
     maxtasks=5
@@ -22,6 +26,7 @@ class Manager:
         self.get_destinations()
         self.createTasks()
         self.startTasks()
+        self.cleanUp()
         
     def stageMovies(self):
         pass
@@ -67,6 +72,7 @@ class Manager:
             event,values=gui.window.read()
             if event is None:
                 break
+                sys.exit()
             if event=='FINISH':
                 if values['ORIGINPATH']!='' and values['MOVIESPATH']!='' and values['SERIESPATH']!='':
                     error=False
@@ -79,6 +85,8 @@ class Manager:
                     if not error:
                         self.values=values
                         break
+                else:
+                    sys.exit()
                         
     # sort videos into movies and series
     def getVideos(self):
@@ -100,7 +108,7 @@ class Manager:
         bestmatch=process.extractOne(eps.name,self.seriesfolders) 
         foldername=bestmatch[0]
         percentagematch=bestmatch[1]
-        print(f"{eps.name} matches {foldername} by {percentagematch}")
+        print(f"{eps.name} matches {foldername} by {percentagematch}%")
         if percentagematch>=90:
             path=os.path.join(self.seriespath,foldername,eps.season)
             if os.path.exists(path):
@@ -156,7 +164,6 @@ class Manager:
             print(f'moving {job.name} to {job.destination}')
             shutil.move(job.path,job.destination)
             self.movedfiles+=1
-            print(f'succesfully moved {job.name}')
         except PermissionError: 
             self.failed.append((job,sys.exc_info()[0]))        
         except:
@@ -170,12 +177,23 @@ class Manager:
             for job in self.jobs:
                 job.join()
             print(f'{self.movedfiles}/{total} files moved succesfully')
+        
         if total!=self.movedfiles:
             print(f"failed:\n{self.failed}")
             return
                 
+    def cleanUp(self):
+        for movie in self.movies:
+            parent_folder=movie.path.split('/')[-1]
+        for series in self.series:
+            parent_folder='/'.join(series.path.split('/')[:-1])
+            if parent_folder!=self.downloadfolder:
+                try:
+                    shutil.rmtree(parent_folder)
+                except Exception as e:
+                    print(e)
+                    return
 
-    
     
     
     
