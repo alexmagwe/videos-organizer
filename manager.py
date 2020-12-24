@@ -53,8 +53,9 @@ class Manager:
         self.seriesfolders=folders[0]
 
     def setup(self):
+        data=os.path.join(os.path.abspath(os.path.dirname(__file__)),'setup.pkl')
         try:
-            with open('setup.pkl','rb') as f:
+            with open(data,'rb') as f:
                 data=pickle.load(f)
                 self.downloadfolder,self.moviespath,self.seriespath=data.get('dlpath'),data.get('moviespath'),data.get('seriespath')
         except FileNotFoundError:
@@ -105,6 +106,7 @@ class Manager:
     
         
     def findDestination(self,eps):
+        print(self.seriesfolders)
         bestmatch=process.extractOne(eps.name,self.seriesfolders) 
         foldername=bestmatch[0]
         percentagematch=bestmatch[1]
