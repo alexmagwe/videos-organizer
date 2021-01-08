@@ -9,6 +9,8 @@ verify_ssl = true
 fuzzywuzzy = "==0.18.0"
 pysimplegui = "==4.29.0"
 python-levenshtein = "*"
+schedule = "*"
+tk = "*"
 
 [requires]
 python_version = "3.8"
