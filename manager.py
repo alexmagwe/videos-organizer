@@ -108,10 +108,9 @@ class Manager:
     def findDestination(self,eps):
         print(self.seriesfolders)
         bestmatch=process.extractOne(eps.name,self.seriesfolders) 
-        foldername=bestmatch[0]
         percentagematch=bestmatch[1]
-        print(f"{eps.name} matches {foldername} by {percentagematch}%")
         if percentagematch>=90:
+            foldername=bestmatch[0]
             path=os.path.join(self.seriespath,foldername,eps.season)
             if os.path.exists(path):
                 return path
