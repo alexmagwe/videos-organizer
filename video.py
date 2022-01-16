@@ -26,7 +26,7 @@ class Video:
     
     @property
     def is_a_movie(self):
-        if self.size>750:
+        if self.size>750 and not self.is_a_series:
             return True
         else:return False
     
