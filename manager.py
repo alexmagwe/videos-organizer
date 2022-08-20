@@ -65,8 +65,8 @@ class Manager:
         try:
             with open(data, 'rb') as f:
                 data = pickle.load(f)
-                self.downloadfolder, self.moviespath, self.seriespath = data.get(
-                    'dlpath'), data.get('moviespath'), data.get('seriespath')
+                self.downloadfolder, self.moviespath, self.seriespath,self.download_videos_folder = data.get(
+                    'dlpath'), data.get('moviespath'), data.get('seriespath'),data.get('dv_path')
         except FileNotFoundError:
             self.getSetup()
             self.setup()
@@ -84,7 +84,8 @@ class Manager:
                 break
                 sys.exit()
             if event == 'FINISH':
-                if values['ORIGINPATH'] != '' and values['MOVIESPATH'] != '' and values['SERIESPATH'] != '':
+                print(values)
+                if values['ORIGINPATH'] != '' and values['MOVIESPATH'] != '' and values['SERIESPATH'] != '' and values['DOWNLOAD_VIDEOS_PATH'] != '':
                     error = False
                     for key, val in values.items():
                         if os.path.exists(val):
@@ -196,6 +197,7 @@ class Manager:
             return
 
     def cleanUp(self):
+        #deletes the folders left behind if any only
         if len(self.movies) > 0 or len(self.series) > 0:
             print(f'running clean up...')
         if len(self.movies) > 0:
@@ -204,9 +206,11 @@ class Manager:
         if len(self.series) > 0:
             for series in self.series:
                 parent_folder = '/'.join(series.path.split('/')[:-1])
-                if parent_folder != self.downloadfolder:
+                if parent_folder != self.downloadfolder and  parent_folder!=self.download_videos_folder:
                     try:
+                        print(parent+folder)
                         shutil.rmtree(parent_folder)
                     except Exception as e:
                         print(e)
                         return
+                

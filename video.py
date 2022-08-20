@@ -2,7 +2,7 @@ import platform
 import os
 import re
 class Video:
-    minmovielength=75
+    minmovielength=750
     def __init__(self,path):
         self.path=path
         self.size=self.getSize()
@@ -26,7 +26,7 @@ class Video:
     
     @property
     def is_a_movie(self):
-        if self.size>750 and not self.is_a_series:
+        if self.size>Video.minmovielength and not self.is_a_series:
             return True
         else:return False
     
@@ -57,7 +57,8 @@ class Series(Video):
         return name
         
     def setSeason(self):
-        season=self.index.group()[:3]
+        season=self.index.group()[:3].upper()
+        print(season)
         return season
         
     def setEpisode(self):
